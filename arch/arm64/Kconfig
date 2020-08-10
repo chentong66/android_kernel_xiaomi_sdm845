@@ -608,6 +608,13 @@ config CPU_BIG_ENDIAN
        help
          Say Y if you plan on running a kernel in big-endian mode.
 
+config ARM_SCHED_DISABLE_ISOLATE_CPU
+	bool "Disable isolating cpu(s) function"
+	default y
+	help 
+	  Some arm operating systems will try to isolate cpu(s),
+	  disable it to utilize all cpus.
+
 config SCHED_MC
 	bool "Multi-core scheduler support"
 	help

@@ -6018,6 +6018,7 @@ int sched_isolate_count(const cpumask_t *mask, bool include_offline)
  */
 int sched_isolate_cpu(int cpu)
 {
+#ifndef CONFIG_ARM_SCHED_DISABLE_ISOLATE_CPU
 	struct rq *rq = cpu_rq(cpu);
 	cpumask_t avail_cpus;
 	int ret_code = 0;
@@ -6078,6 +6079,9 @@ out:
 	trace_sched_isolate(cpu, cpumask_bits(cpu_isolated_mask)[0],
 			    start_time, 1);
 	return ret_code;
+#else
+	return -EINVAL;
+#endif 
 }
 
 /*
@@ -6131,12 +6135,16 @@ out:
 
 int sched_unisolate_cpu(int cpu)
 {
+#ifndef CONFIG_ARM_SCHED_DISABLE_ISOLATE_CPU
 	int ret_code;
 
 	cpu_maps_update_begin();
 	ret_code = sched_unisolate_cpu_unlocked(cpu);
 	cpu_maps_update_done();
 	return ret_code;
+#else 
+	return 0;
+#endif
 }
 
 #endif /* CONFIG_HOTPLUG_CPU */
@@ -6676,14 +6684,15 @@ cpu_attach_domain(struct sched_domain *sd, struct root_domain *rd, int cpu)
 /* Setup the mask of cpus configured for isolated domains */
 static int __init isolated_cpu_setup(char *str)
 {
+#ifndef CONFIG_ARM_SCHED_DISABLE_ISOLATE_CPU
 	int ret;
-
 	alloc_bootmem_cpumask_var(&cpu_isolated_map);
 	ret = cpulist_parse(str, cpu_isolated_map);
 	if (ret) {
 		pr_err("sched: Error, all isolcpus= values must be between 0 and %d\n", nr_cpu_ids);
 		return 0;
 	}
+#endif
 	return 1;
 }
 __setup("isolcpus=", isolated_cpu_setup);
