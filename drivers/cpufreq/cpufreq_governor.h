@@ -86,7 +86,7 @@ struct policy_dbs_info {
 	 * and work-handler.
 	 */
 	struct mutex timer_mutex;
-
+	int ignore_limits;
 	u64 last_sample_time;
 	s64 sample_delay_ns;
 	atomic_t work_count;
@@ -128,13 +128,12 @@ struct cpu_dbs_info {
 struct dbs_governor {
 	struct cpufreq_governor gov;
 	struct kobj_type kobj_type;
-
 	/*
 	 * Common data for platforms that don't set
 	 * CPUFREQ_HAVE_GOVERNOR_PER_POLICY
 	 */
 	struct dbs_data *gdbs_data;
-
+	int ignore_limits;
 	unsigned int (*gov_dbs_timer)(struct cpufreq_policy *policy);
 	struct policy_dbs_info *(*alloc)(void);
 	void (*free)(struct policy_dbs_info *policy_dbs);

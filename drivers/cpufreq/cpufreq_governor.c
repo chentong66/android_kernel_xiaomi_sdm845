@@ -352,7 +352,7 @@ static struct policy_dbs_info *alloc_policy_dbs_info(struct cpufreq_policy *poli
 	atomic_set(&policy_dbs->work_count, 0);
 	init_irq_work(&policy_dbs->irq_work, dbs_irq_work);
 	INIT_WORK(&policy_dbs->work, dbs_work_handler);
-
+	policy_dbs->ignore_limits = gov->ignore_limits ? 1 : 0;
 	/* Set policy_dbs for all CPUs, online+offline */
 	for_each_cpu(j, policy->related_cpus) {
 		struct cpu_dbs_info *j_cdbs = &per_cpu(cpu_dbs, j);
@@ -548,7 +548,8 @@ EXPORT_SYMBOL_GPL(cpufreq_dbs_governor_stop);
 void cpufreq_dbs_governor_limits(struct cpufreq_policy *policy)
 {
 	struct policy_dbs_info *policy_dbs = policy->governor_data;
-
+	if (policy_dbs->ignore_limits)
+		return;
 	mutex_lock(&policy_dbs->timer_mutex);
 	cpufreq_policy_apply_limits(policy);
 	gov_update_sample_delay(policy_dbs, 0);

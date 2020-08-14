@@ -2035,7 +2035,6 @@ static int __target_index(struct cpufreq_policy *policy, int index)
 
 		cpufreq_freq_transition_begin(policy, &freqs);
 	}
-
 	retval = cpufreq_driver->target_index(policy, index);
 	if (retval)
 		pr_err("%s: Failed to change cpu frequency: %d\n", __func__,
@@ -2060,7 +2059,29 @@ static int __target_index(struct cpufreq_policy *policy, int index)
 
 	return retval;
 }
-
+/* make sure @target_freq falls between min_freq(policy->freq_table) and max_freq(policy->freq_table) */
+int __cpufreq_driver_target_force(struct cpufreq_policy *policy,
+					      unsigned int target_freq,
+					      unsigned int relation)
+{
+	int retval;
+	int index;
+	if (cpufreq_disabled())
+		return -EINVAL;
+	if (target_freq == policy->cur)
+		return 0;
+//	policy->restore_freq = policy->cur;
+	if (cpufreq_driver->target)
+		return cpufreq_driver->target(policy,target_freq,relation);
+	if (!cpufreq_driver->target_index)
+		return -EINVAL;
+	if (relation == CPUFREQ_RELATION_L || relation == CPUFREQ_RELATION_C) 
+		index = cpufreq_frequency_table_target_force_l(policy,target_freq);
+	else 
+		index = cpufreq_frequency_table_target_force_h(policy,target_freq);
+	retval = cpufreq_driver->target_index(policy, index);
+	return retval;
+}
 int __cpufreq_driver_target(struct cpufreq_policy *policy,
 			    unsigned int target_freq,
 			    unsigned int relation)

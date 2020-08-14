@@ -67,7 +67,6 @@ struct cpufreq_policy {
 	cpumask_var_t		cpus;	/* Online CPUs only */
 	cpumask_var_t		related_cpus; /* Online + Offline CPUs */
 	cpumask_var_t		real_cpus; /* Related and present */
-
 	unsigned int		shared_type; /* ACPI: ANY or ALL affected CPUs
 						should set cpufreq */
 	unsigned int		cpu;    /* cpu managing this policy, must be online */
@@ -532,6 +531,9 @@ int cpufreq_driver_target(struct cpufreq_policy *policy,
 int __cpufreq_driver_target(struct cpufreq_policy *policy,
 				   unsigned int target_freq,
 				   unsigned int relation);
+int __cpufreq_driver_target_force(struct cpufreq_policy *policy,
+					      unsigned int target_freq,
+					      unsigned int relation);
 unsigned int cpufreq_driver_resolve_freq(struct cpufreq_policy *policy,
 					 unsigned int target_freq);
 int cpufreq_register_governor(struct cpufreq_governor *governor);
@@ -879,7 +881,78 @@ static inline int cpufreq_table_find_index_c(struct cpufreq_policy *policy,
 	else
 		return cpufreq_table_find_index_dc(policy, target_freq);
 }
-
+static inline unsigned int cpufreq_frequency_table_max(struct cpufreq_policy *policy)
+{
+	struct cpufreq_frequency_table *table = policy->freq_table;
+	struct cpufreq_frequency_table *pos;
+	unsigned int freq = 0;
+	cpufreq_for_each_valid_entry(pos,table){
+		if (pos->frequency > freq){
+			freq = pos->frequency;
+		}
+	}
+	return freq;
+}
+static inline unsigned int cpufreq_frequency_table_min(struct cpufreq_policy *policy)
+{
+	struct cpufreq_frequency_table *table = policy->freq_table;
+	struct cpufreq_frequency_table *pos;
+	unsigned int freq = UINT_MAX;
+	cpufreq_for_each_valid_entry(pos,table){
+		if (pos->frequency < freq){
+			freq = pos->frequency;
+		}
+	}
+	return freq;
+}
+static inline int cpufreq_frequency_table_target_force_l(struct cpufreq_policy *policy,
+						       unsigned int target_freq)
+{
+	struct cpufreq_frequency_table *table = policy->freq_table;
+	struct cpufreq_frequency_table *pos,*selected = NULL;
+	unsigned int diff = UINT_MAX;
+	cpufreq_for_each_valid_entry(pos,table){
+		if (pos->frequency >= target_freq && (pos->frequency - target_freq < diff)){
+			selected = pos;
+			diff = pos->frequency - target_freq;
+		}
+		if (diff == 0)
+			break;
+		if (selected == NULL)
+			selected = pos;
+	}
+	/*
+	unsigned int freq = 0;
+	cpufreq_for_each_valid_entry(pos,table){
+		if (pos->frequency > freq) {
+			selected = pos;
+			freq = selected->frequency;
+		}
+	}
+	target_freq = 0;
+	*/
+	//printk("force_l requested freq %u,selected freq %u, table addr %p, select index %ld\n",target_freq,selected->frequency,table,selected-table);
+	return selected - table;
+}
+static inline int cpufreq_frequency_table_target_force_h(struct cpufreq_policy *policy,
+						       unsigned int target_freq)
+{
+	struct cpufreq_frequency_table *table = policy->freq_table;
+	struct cpufreq_frequency_table *pos,*selected = NULL;
+	unsigned int diff = UINT_MAX;
+	cpufreq_for_each_valid_entry(pos,table){
+		if (pos->frequency <= target_freq && (target_freq - pos->frequency < diff)){
+			selected = pos;
+			diff = target_freq - pos->frequency;
+		}
+		if (diff == 0)
+			break;
+		if (selected == NULL)
+			selected = pos;
+	}
+	return selected - table;
+}
+/* make sure @target_freq falls between min_freq(policy->freq_table) and max_freq(policy->freq_table) */
 static inline int cpufreq_frequency_table_target(struct cpufreq_policy *policy,
 						 unsigned int target_freq,
 						 unsigned int relation)
