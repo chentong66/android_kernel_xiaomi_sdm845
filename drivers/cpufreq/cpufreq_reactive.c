@@ -24,7 +24,7 @@ static inline struct ra_policy_dbs_info *to_dbs_info(struct policy_dbs_info *pol
 {
 	return container_of(policy_dbs, struct ra_policy_dbs_info, policy_dbs);
 }
-#define DEF_FREQUENCY_UP_THRESHOLD	(50)
+#define DEF_FREQUENCY_UP_THRESHOLD	(70)
 #define DEF_FREQUENCY_MIN_THRESHOLD	(5)
 #define DEF_SAMPLING_DOWN_FACTOR	(10)
 //#define MAX_SAMPLING_DOWN_FACTOR	(1000)
